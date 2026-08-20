@@ -6,16 +6,18 @@
   --rose: #8f4058;
   --deep: #3b1724;
   --muted: #876a72;
+  --app-height: 100vh;
 }
 
 html, body {
   width: 100%;
   height: 100%;
   margin: 0;
+  overflow: hidden;
 }
 
 body {
-  overflow: hidden;
+  height: var(--app-height);
   color: var(--deep);
   background:
     radial-gradient(circle at 20% 20%, rgba(255,255,255,.9), transparent 28%),
@@ -23,56 +25,78 @@ body {
     linear-gradient(135deg, #f8e8ed, #fff8f5 50%, #f4e0e7);
   font-family: "Cormorant Garamond", Georgia, serif;
   -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
 }
 
 .book {
   position: fixed;
   inset: 0;
+  height: var(--app-height);
   overflow: hidden;
 }
 
+/* Each page is a non-scrolling, fully isolated "slide".
+   It only holds the decorative frame and clips its own content —
+   nothing from one page can ever bleed into another. */
 .page {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  padding: 8vh 9vw 95px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  overflow-y: auto;
+  overflow: hidden;
   opacity: 0;
   visibility: hidden;
-  transform: translateX(100%);
-  transition: transform .65s cubic-bezier(.77,0,.18,1), opacity .35s ease, visibility 0s linear .65s;
+  pointer-events: none;
+  transform: translate3d(100%, 0, 0);
+  transition: transform .6s cubic-bezier(.77,0,.18,1), opacity .35s ease, visibility 0s linear .6s;
   z-index: 1;
 }
 
 .page.active {
   opacity: 1;
   visibility: visible;
-  transform: translateX(0);
-  z-index: 2;
-  transition: transform .65s cubic-bezier(.77,0,.18,1), opacity .35s ease;
+  pointer-events: auto;
+  transform: translate3d(0, 0, 0);
+  z-index: 3;
+  transition: transform .6s cubic-bezier(.77,0,.18,1), opacity .35s ease;
 }
 
 .page.past {
-  transform: translateX(-100%);
+  transform: translate3d(-100%, 0, 0);
   opacity: 0;
+  z-index: 2;
 }
 
-.page::before {
-  content: "";
+/* Decorative frame: lives on the non-scrolling .page box,
+   so it can never drift or get carried along by inner scrolling. */
+.page-frame {
   position: absolute;
   inset: 18px;
   border: 1px solid rgba(143,64,88,.16);
   border-radius: 22px;
   pointer-events: none;
+  z-index: 1;
 }
 
-.cover {
+/* Scrollable content lives in its own inner box, completely
+   separate from the frame and from the page's own transform/clip. */
+.page-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: 8vh 9vw 100px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  z-index: 2;
+}
+
+.cover .page-inner {
   background: radial-gradient(circle, rgba(255,255,255,.72), rgba(255,245,247,.25) 65%, transparent);
 }
 
@@ -137,6 +161,7 @@ h2 {
 }
 
 .primary:hover { transform: translateY(-2px); }
+.primary:active { transform: translateY(0); }
 
 .paper {
   width: min(820px, 100%);
@@ -169,7 +194,7 @@ h2 {
   position: fixed;
   right: 28px;
   bottom: 76px;
-  z-index: 8;
+  z-index: 10;
   width: 50px;
   height: 50px;
   border: 0;
@@ -180,6 +205,8 @@ h2 {
   cursor: pointer;
   box-shadow: 0 8px 25px rgba(90,30,50,.2);
 }
+
+.floating-next:active { transform: scale(.96); }
 
 .controls {
   position: fixed;
@@ -211,6 +238,7 @@ h2 {
 
 .controls button:disabled { opacity: .3; cursor: default; }
 .controls button:not(:disabled):hover { background: rgba(143,64,88,.09); }
+.controls button:not(:disabled):active { background: rgba(143,64,88,.16); }
 
 #counter {
   min-width: 48px;
@@ -241,7 +269,10 @@ h2 {
   color: white;
   background: var(--rose);
   font-size: 1.2rem;
+  flex: none;
 }
+
+.music-info { min-width: 0; flex: 1; }
 
 .music-card strong, .music-card span {
   display: block;
@@ -253,7 +284,7 @@ h2 {
 }
 
 .music-play {
-  margin-left: auto;
+  flex: none;
   width: 38px;
   height: 38px;
   border: 0;
@@ -261,70 +292,39 @@ h2 {
   color: white;
   background: var(--rose);
   cursor: pointer;
-}
-
-.music-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
+  font-size: 1rem;
   display: grid;
   place-items: center;
-  padding: 22px;
-  background: rgba(45,18,28,.42);
-  backdrop-filter: blur(8px);
-  opacity: 0;
-  visibility: hidden;
-  transition: .25s ease;
 }
 
-.music-modal.open {
-  opacity: 1;
-  visibility: visible;
+.music-play.playing {
+  animation: pulse 1.6s ease-in-out infinite;
 }
 
-.music-box {
-  width: min(720px, 96vw);
-  padding: 26px;
-  border-radius: 22px;
-  background: #fffaf9;
-  box-shadow: 0 30px 90px rgba(30,10,18,.25);
-  position: relative;
-  text-align: center;
+.music-play:disabled {
+  opacity: .45;
+  cursor: default;
+  animation: none;
 }
 
-.close-music {
-  position: absolute;
-  top: 10px;
-  right: 13px;
-  border: 0;
-  background: transparent;
-  color: var(--rose);
-  font-size: 2rem;
-  cursor: pointer;
+.music-fallback {
+  margin: 10px 0 0;
+  max-width: min(320px, 90vw);
+  color: var(--muted);
+  font-size: .82rem;
+  line-height: 1.3;
 }
 
-.video-wrap {
-  position: relative;
-  width: 100%;
-  padding-top: 56.25%;
-  overflow: hidden;
-  border-radius: 14px;
-  background: #000;
-}
-
-.video-wrap iframe {
-  position: absolute;
+.decor {
+  position: fixed;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  border: 0;
+  z-index: 0;
+  pointer-events: none;
 }
 
 .decor span {
   position: fixed;
-  z-index: 4;
   color: rgba(143,64,88,.13);
-  pointer-events: none;
   animation: float 10s ease-in-out infinite;
 }
 
@@ -344,11 +344,11 @@ h2 {
 }
 
 @media (max-width: 650px) {
-  .page {
-    padding: 7vh 7vw 100px;
+  .page-inner {
+    padding: 7vh 7vw 110px;
   }
 
-  .page::before { inset: 10px; border-radius: 15px; }
+  .page-frame { inset: 10px; border-radius: 15px; }
 
   .paper {
     padding: 25px 20px;
@@ -361,10 +361,11 @@ h2 {
 
   .floating-next {
     right: 18px;
-    bottom: 76px;
+    bottom: 82px;
   }
+}
 
-  .music-box {
-    padding: 22px 14px;
-  }
+@media (max-height: 650px) {
+  .heart { font-size: clamp(3rem, 9vw, 5rem); }
+  h1 { font-size: clamp(2.4rem, 7vw, 4.6rem); }
 }
