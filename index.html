@@ -9,7 +9,7 @@
 <body>
   <div class="petals" aria-hidden="true"></div>
 
-  <main class="book" id="book">
+  <main class="book" id="book"><div class="track" id="track">
     <section class="page cover active">
       <div class="glow"></div>
       <div class="heart">🤍</div>
@@ -68,7 +68,15 @@
       <h2>Ainda tem muita coisa<br>pra eu te falar, minha nega.</h2>
       <p class="tiny">e essa cartinha ainda vai ganhar muitos capítulos ♡</p>
     </section>
-  </main>
+  </div></main>
+
+  <audio id="music" loop preload="auto">
+    <!-- Coloque aqui um arquivo de áudio que você tenha direito de usar, por exemplo:
+    <source src="te-vivo.mp3" type="audio/mpeg">
+    -->
+  </audio>
+
+  <button class="music-btn" id="musicBtn" aria-label="Ativar música">♫</button>
 
   <nav class="controls" aria-label="Navegação da cartinha">
     <button id="prev" aria-label="Página anterior">←</button>
